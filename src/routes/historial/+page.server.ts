@@ -1,0 +1,55 @@
+import type { PageServerLoad } from './$types';
+import { db } from '$lib/server/db';
+import { viajes, viajeClientes, viajeParadas, ubicaciones, usuarios } from '$lib/server/schema';
+import { isNotNull, desc, asc, inArray, eq } from 'drizzle-orm';
+
+export const load: PageServerLoad = async () => {
+	const pagados = await db
+		.select()
+		.from(viajes)
+		.where(isNotNull(viajes.pagadoEn))
+		.orderBy(desc(viajes.pagadoEn));
+
+	if (pagados.length === 0) return { viajes: [] };
+
+	const ids = pagados.map((v) => v.id);
+
+	const [clienteRows, paradaRows] = await Promise.all([
+		db
+			.select({ viajeId: viajeClientes.viajeId, usuarioId: usuarios.id, nombre: usuarios.nombre })
+			.from(viajeClientes)
+			.innerJoin(usuarios, eq(viajeClientes.usuarioId, usuarios.id))
+			.where(inArray(viajeClientes.viajeId, ids)),
+
+		db
+			.select({
+				viajeId: viajeParadas.viajeId,
+				orden: viajeParadas.orden,
+				ubicacionId: ubicaciones.id,
+				nombre: ubicaciones.nombre
+			})
+			.from(viajeParadas)
+			.innerJoin(ubicaciones, eq(viajeParadas.ubicacionId, ubicaciones.id))
+			.where(inArray(viajeParadas.viajeId, ids))
+			.orderBy(asc(viajeParadas.orden))
+	]);
+
+	return {
+		viajes: pagados.map((v) => ({
+			id: v.id,
+			creadoEn: v.creadoEn,
+			pagadoEn: v.pagadoEn,
+			conductorNombre: v.conductorNombre,
+			precioUsd: v.precioUsd,
+			minutosEspera: v.minutosEspera,
+			notas: v.notas,
+			clientes: clienteRows
+				.filter((c) => c.viajeId === v.id)
+				.map((c) => ({ id: c.usuarioId, nombre: c.nombre })),
+			paradas: paradaRows
+				.filter((p) => p.viajeId === v.id)
+				.sort((a, b) => a.orden - b.orden)
+				.map((p) => ({ id: p.ubicacionId, nombre: p.nombre }))
+		}))
+	};
+};
