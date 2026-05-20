@@ -19,18 +19,32 @@ async function resolveLocation(loc: FormLoc): Promise<number> {
 	return row.id;
 }
 
-export const PATCH: RequestHandler = async ({ params }) => {
+export const PATCH: RequestHandler = async ({ params, request }) => {
 	const id = parseInt(params.id);
 	if (isNaN(id)) error(400, 'ID inválido');
 
+	const body = await request.json().catch(() => null);
+
+	// Price update
+	if (body?.precioUsd !== undefined) {
+		const val = parseFloat(body.precioUsd);
+		if (isNaN(val) || val < 0) error(400, 'Precio inválido');
+		const [updated] = await db
+			.update(viajes)
+			.set({ precioUsd: String(val) })
+			.where(eq(viajes.id, id))
+			.returning();
+		if (!updated) error(404, 'Carrera no encontrada');
+		return json(updated);
+	}
+
+	// Default: mark as paid
 	const [updated] = await db
 		.update(viajes)
 		.set({ pagadoEn: new Date() })
 		.where(eq(viajes.id, id))
 		.returning();
-
 	if (!updated) error(404, 'Carrera no encontrada');
-
 	return json(updated);
 };
 
@@ -46,7 +60,6 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	if (!clienteIds?.length) error(400, 'Se requiere al menos un cliente');
 	if (!origen) error(400, 'Origen requerido');
 	if (!destino) error(400, 'Destino requerido');
-	if (!precioUsd) error(400, 'Precio requerido');
 
 	try {
 		const origenId = await resolveLocation(origen);
@@ -60,7 +73,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			.update(viajes)
 			.set({
 				conductorNombre: conductorNombre || 'MC',
-				precioUsd: String(precioUsd),
+				precioUsd: precioUsd ? String(precioUsd) : null,
 				minutosEspera: minutosEspera ?? null,
 				notas: notas || null
 			})

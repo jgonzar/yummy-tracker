@@ -37,7 +37,6 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (!clienteIds?.length) error(400, 'Se requiere al menos un cliente');
 	if (!origen) error(400, 'Origen requerido');
 	if (!destino) error(400, 'Destino requerido');
-	if (!precioUsd) error(400, 'Precio requerido');
 
 	try {
 		const origenId = await resolveLocation(origen);
@@ -51,7 +50,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			.insert(viajes)
 			.values({
 				conductorNombre: conductorNombre || 'MC',
-				precioUsd: String(precioUsd),
+				precioUsd: precioUsd ? String(precioUsd) : null,
 				minutosEspera: minutosEspera ?? null,
 				notas: notas || null
 			})

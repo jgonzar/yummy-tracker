@@ -1,2 +1,19 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Remove 300ms tap delay on all interactive elements */
+button,
+a,
+[role="button"] {
+	touch-action: manipulation;
+}
+
+/* Prevent pull-to-refresh / overscroll bounce on the main scroll container */
+body {
+	overscroll-behavior-y: contain;
+}
+
+/* Momentum scrolling for any overflow-y containers (iOS Safari) */
+.overflow-y-auto {
+	-webkit-overflow-scrolling: touch;
+}

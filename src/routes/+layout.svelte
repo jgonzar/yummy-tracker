@@ -1,19 +1,23 @@
 <script lang="ts">
 	import '../app.css';
 	import { userState } from '$lib/stores/user.svelte';
+	import { networkState } from '$lib/stores/network.svelte';
+	import { pendingStore } from '$lib/stores/pending.svelte';
 	import NavBar from '$lib/components/NavBar.svelte';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import UserSelect from '$lib/components/UserSelect.svelte';
+	import Toaster from '$lib/components/Toaster.svelte';
 
 	let { children } = $props();
 	let drawerOpen = $state(false);
 
 	$effect(() => {
 		userState.init();
+		networkState.init();
+		pendingStore.init();
 	});
 </script>
 
-<!-- User selection overlay — shown until a user is picked -->
 {#if !userState.activeUser}
 	<UserSelect />
 {:else}
@@ -32,4 +36,15 @@
 			<Drawer onNavigate={() => (drawerOpen = false)} />
 		</div>
 	</div>
+
+	<Toaster />
+
+	<!-- Offline banner -->
+	{#if !networkState.online}
+		<div
+			class="fixed bottom-0 inset-x-0 z-50 bg-warning text-warning-content text-center text-xs py-2 font-medium"
+		>
+			Sin conexión — las carreras se guardarán al reconectar
+		</div>
+	{/if}
 {/if}

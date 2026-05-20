@@ -18,7 +18,7 @@ export const viajes = pgTable('viajes', {
 	creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
 	pagadoEn: timestamp('pagado_en', { withTimezone: true }),
 	conductorNombre: text('conductor_nombre').notNull().default('MC'),
-	precioUsd: numeric('precio_usd', { precision: 10, scale: 2 }).notNull(),
+	precioUsd: numeric('precio_usd', { precision: 10, scale: 2 }),
 	minutosEspera: integer('minutos_espera'),
 	notas: text('notas')
 });

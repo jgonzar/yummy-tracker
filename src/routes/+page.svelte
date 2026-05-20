@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { fly } from 'svelte/transition';
-	import { cubicIn } from 'svelte/easing';
+	import { cubicIn, cubicOut } from 'svelte/easing';
+	import { pendingStore } from '$lib/stores/pending.svelte';
 	import AddRideSheet from '$lib/components/AddRideSheet.svelte';
 	import RideCard, { type RideData } from '$lib/components/RideCard.svelte';
 	import SummaryBar from '$lib/components/SummaryBar.svelte';
@@ -10,9 +12,50 @@
 	let showSheet = $state(false);
 	let editViaje = $state<RideData | null>(null);
 	let hiddenIds = $state(new Set<number>());
+	let syncing = $state(false);
+	let mounted = false; // plain boolean — only used at transition-creation time
 
-	const visibleViajes = $derived(data.viajes.filter((v) => !hiddenIds.has(v.id)));
-	const totalUsd = $derived(visibleViajes.reduce((sum, v) => sum + parseFloat(v.precioUsd), 0));
+	const pendingRides = $derived(pendingStore.rides.map((r) => pendingStore.toRideData(r)));
+	const serverViajes = $derived(data.viajes.filter((v) => !hiddenIds.has(v.id)));
+	const visibleViajes = $derived([...pendingRides, ...serverViajes]);
+	const totalUsd = $derived(visibleViajes.reduce((sum, v) => sum + (v.precioUsd ? parseFloat(v.precioUsd) : 0), 0));
+
+	onMount(() => {
+		mounted = true;
+
+		// Sync any pending rides that were queued while offline
+		if (navigator.onLine && pendingStore.rides.length > 0) syncPending();
+
+		function handleOnline() {
+			if (pendingStore.rides.length > 0) syncPending();
+		}
+		window.addEventListener('online', handleOnline);
+		return () => window.removeEventListener('online', handleOnline);
+	});
+
+	async function syncPending() {
+		if (syncing) return;
+		syncing = true;
+		const snapshot = [...pendingStore.rides];
+		let synced = 0;
+		for (const pending of snapshot) {
+			try {
+				const res = await fetch('/api/viajes', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(pending.payload)
+				});
+				if (res.ok) {
+					pendingStore.remove(pending.localId);
+					synced++;
+				}
+			} catch {
+				// Stay in queue — still offline or server error
+			}
+		}
+		if (synced > 0) await invalidateAll();
+		syncing = false;
+	}
 
 	function openCreate() {
 		editViaje = null;
@@ -37,6 +80,10 @@
 	async function onSaved() {
 		await invalidateAll();
 	}
+
+	async function handlePriceUpdated() {
+		await invalidateAll();
+	}
 </script>
 
 <SummaryBar
@@ -53,13 +100,18 @@
 {:else}
 	<div class="space-y-3 pb-24">
 		{#each visibleViajes as viaje (viaje.id)}
-			<div out:fly={{ x: 400, duration: 300, easing: cubicIn }}>
+			<div
+				in:fly={mounted ? { y: 24, duration: 220, easing: cubicOut } : { duration: 0 }}
+				out:fly={{ x: 400, duration: 300, easing: cubicIn }}
+			>
 				<RideCard
 					{viaje}
 					tasa={data.tasa?.tasa ?? null}
+					pending={viaje.id < 0}
 					onPaid={handlePaid}
 					onDeleted={handleDeleted}
 					onEdit={handleEdit}
+					onPriceUpdated={handlePriceUpdated}
 				/>
 			</div>
 		{/each}

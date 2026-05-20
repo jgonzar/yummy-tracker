@@ -5,6 +5,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { USERS } from '$lib/stores/user.svelte';
+	import { networkState } from '$lib/stores/network.svelte';
+	import { pendingStore, type PendingRide } from '$lib/stores/pending.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import LocationSelect, { type FormLocation } from './LocationSelect.svelte';
 	import type { RideData } from './RideCard.svelte';
 
@@ -113,17 +116,60 @@
 		if (clienteIds.length === 0) e.clientes = 'Selecciona al menos un cliente';
 		if (!origen) e.origen = 'Requerido';
 		if (!destino) e.destino = 'Requerido';
-		if (!precioUsd || isNaN(parseFloat(precioUsd)) || parseFloat(precioUsd) <= 0)
+		if (precioUsd && (isNaN(parseFloat(precioUsd)) || parseFloat(precioUsd) < 0))
 			e.precio = 'Ingresa un precio válido';
 		if (paradas.some((p) => !p.location)) e.paradas = 'Completa todas las paradas';
 		errors = e;
 		return Object.keys(e).length === 0;
 	}
 
+	function buildPayload() {
+		return {
+			clienteIds,
+			conductorNombre,
+			origen,
+			paradas: paradas.map((p) => p.location),
+			destino,
+			precioUsd,
+			minutosEspera: minutosEspera ? parseInt(minutosEspera) : undefined,
+			notas: notas.trim() || undefined
+		};
+	}
+
+	function queueOffline(payload: ReturnType<typeof buildPayload>) {
+		const pending: PendingRide = {
+			localId: Date.now().toString(),
+			creadoEn: new Date().toISOString(),
+			clienteIds,
+			conductorNombre,
+			origenNombre: origen!.nombre,
+			paradaNombres: paradas.map((p) => p.location!.nombre),
+			destinoNombre: destino!.nombre,
+			precioUsd,
+			minutosEspera: minutosEspera ? parseInt(minutosEspera) : undefined,
+			notas: notas.trim() || undefined,
+			payload
+		};
+		pendingStore.add(pending);
+		locationCache = null;
+		toastStore.add('Carrera creada exitosamente', 'success');
+		close();
+		onSaved?.(pending);
+	}
+
 	async function submit() {
 		if (!validate()) return;
 		submitting = true;
 		errors = {};
+
+		const payload = buildPayload();
+
+		// Offline and creating — queue immediately without attempting fetch
+		if (!networkState.online && !editViaje) {
+			queueOffline(payload);
+			submitting = false;
+			return;
+		}
 
 		const url = editViaje ? `/api/viajes/${editViaje.id}` : '/api/viajes';
 		const method = editViaje ? 'PUT' : 'POST';
@@ -132,16 +178,7 @@
 			const res = await fetch(url, {
 				method,
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					clienteIds,
-					conductorNombre,
-					origen,
-					paradas: paradas.map((p) => p.location),
-					destino,
-					precioUsd,
-					minutosEspera: minutosEspera ? parseInt(minutosEspera) : undefined,
-					notas: notas.trim() || undefined
-				})
+				body: JSON.stringify(payload)
 			});
 
 			if (!res.ok) {
@@ -150,11 +187,17 @@
 			}
 
 			const viaje = await res.json();
-			locationCache = null; // new location may have been created — refetch next open
+			locationCache = null;
+			toastStore.add(editViaje ? 'Carrera actualizada' : 'Carrera creada exitosamente', 'success');
 			close();
 			onSaved?.(viaje);
 		} catch (e) {
-			errors = { submit: e instanceof Error ? e.message : 'No se pudo guardar la carrera' };
+			// Network failure mid-request (went offline) — fall back to queue for creates
+			if (e instanceof TypeError && !editViaje) {
+				queueOffline(payload);
+			} else {
+				errors = { submit: e instanceof Error ? e.message : 'No se pudo guardar la carrera' };
+			}
 		} finally {
 			submitting = false;
 		}
