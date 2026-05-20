@@ -13,11 +13,13 @@
 
 	let {
 		viaje,
+		tasa = null,
 		onPaid,
 		onDeleted,
 		onEdit
 	}: {
 		viaje: RideData;
+		tasa?: number | null;
 		onPaid?: (id: number) => void;
 		onDeleted?: (id: number) => void;
 		onEdit?: (viaje: RideData) => void;
@@ -35,6 +37,16 @@
 		new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
 			parseFloat(viaje.precioUsd)
 		)
+	);
+
+	const precioVes = $derived(
+		tasa
+			? 'Bs. ' +
+					new Intl.NumberFormat('es-VE', {
+						minimumFractionDigits: 2,
+						maximumFractionDigits: 2
+					}).format(parseFloat(viaje.precioUsd) * tasa)
+			: null
 	);
 
 	const fecha = $derived(
@@ -86,31 +98,36 @@
 					<span class="badge badge-primary badge-sm">{cliente.nombre}</span>
 				{/each}
 			</div>
-			<div class="flex items-center gap-0.5 shrink-0">
-				<span class="font-bold text-base">{precio}</span>
-				{#if !fechaPago}
-					<div class="dropdown dropdown-end">
-						<button
-							tabindex="0"
-							class="btn btn-ghost btn-xs btn-circle text-base-content/40"
-							aria-label="Opciones"
-						>
-							•••
-						</button>
-						<ul
-							tabindex="0"
-							class="dropdown-content z-50 menu p-1 shadow-lg bg-base-300 rounded-box w-36 mt-1"
-						>
-							<li>
-								<button onclick={() => onEdit?.(viaje)}>Editar</button>
-							</li>
-							<li>
-								<button class="text-error" onclick={() => (confirmingDelete = true)}>
-									Eliminar
-								</button>
-							</li>
-						</ul>
-					</div>
+			<div class="flex flex-col items-end shrink-0">
+				<div class="flex items-center gap-0.5">
+					<span class="font-bold text-base">{precio}</span>
+					{#if !fechaPago}
+						<div class="dropdown dropdown-end">
+							<button
+								tabindex="0"
+								class="btn btn-ghost btn-xs btn-circle text-base-content/40"
+								aria-label="Opciones"
+							>
+								•••
+							</button>
+							<ul
+								tabindex="0"
+								class="dropdown-content z-50 menu p-1 shadow-lg bg-base-300 rounded-box w-36 mt-1"
+							>
+								<li>
+									<button onclick={() => onEdit?.(viaje)}>Editar</button>
+								</li>
+								<li>
+									<button class="text-error" onclick={() => (confirmingDelete = true)}>
+										Eliminar
+									</button>
+								</li>
+							</ul>
+						</div>
+					{/if}
+				</div>
+				{#if precioVes}
+					<span class="text-xs text-base-content/40">{precioVes}</span>
 				{/if}
 			</div>
 		</div>

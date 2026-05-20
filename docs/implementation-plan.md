@@ -122,4 +122,4 @@ M1 → M2 → M3 → M4 → M5
 | ORM | Drizzle ORM |
 | Estilos | Tailwind CSS v4 + DaisyUI |
 | Despliegue | Vercel (free tier) |
-| Tasa BCV | yadio.io (free, no API key) |
+| Tasa BCV | ve.dolarapi.com (free, no API key) |

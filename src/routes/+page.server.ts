@@ -2,15 +2,17 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { viajes, viajeClientes, viajeParadas, ubicaciones, usuarios } from '$lib/server/schema';
 import { isNull, desc, asc, inArray, eq } from 'drizzle-orm';
+import { getTasaBcv } from '$lib/server/bcv';
 
 export const load: PageServerLoad = async () => {
-	const pendientes = await db
-		.select()
-		.from(viajes)
-		.where(isNull(viajes.pagadoEn))
-		.orderBy(desc(viajes.creadoEn));
+	const [pendientes, tasaResult] = await Promise.all([
+		db.select().from(viajes).where(isNull(viajes.pagadoEn)).orderBy(desc(viajes.creadoEn)),
+		getTasaBcv()
+	]);
 
-	if (pendientes.length === 0) return { viajes: [] };
+	const tasa = tasaResult ? { tasa: tasaResult.tasa, stale: tasaResult.stale } : null;
+
+	if (pendientes.length === 0) return { viajes: [], tasa };
 
 	const ids = pendientes.map((v) => v.id);
 
@@ -35,6 +37,7 @@ export const load: PageServerLoad = async () => {
 	]);
 
 	return {
+		tasa,
 		viajes: pendientes.map((v) => ({
 			id: v.id,
 			creadoEn: v.creadoEn,

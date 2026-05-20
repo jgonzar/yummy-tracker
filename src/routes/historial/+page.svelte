@@ -11,7 +11,7 @@
 {:else}
 	<div class="space-y-3 pb-8">
 		{#each data.viajes as viaje (viaje.id)}
-			<RideCard {viaje} />
+			<RideCard {viaje} tasa={data.tasa?.tasa ?? null} />
 		{/each}
 	</div>
 {/if}

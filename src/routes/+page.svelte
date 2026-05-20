@@ -39,7 +39,12 @@
 	}
 </script>
 
-<SummaryBar count={visibleViajes.length} {totalUsd} />
+<SummaryBar
+	count={visibleViajes.length}
+	{totalUsd}
+	tasa={data.tasa?.tasa ?? null}
+	stale={data.tasa?.stale ?? false}
+/>
 
 {#if visibleViajes.length === 0}
 	<div class="flex flex-col items-center justify-center py-24 gap-2">
@@ -51,6 +56,7 @@
 			<div out:fly={{ x: 400, duration: 300, easing: cubicIn }}>
 				<RideCard
 					{viaje}
+					tasa={data.tasa?.tasa ?? null}
 					onPaid={handlePaid}
 					onDeleted={handleDeleted}
 					onEdit={handleEdit}
