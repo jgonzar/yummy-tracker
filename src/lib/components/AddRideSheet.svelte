@@ -34,6 +34,7 @@
 	let precioUsd = $state('');
 	let minutosEspera = $state('');
 	let notas = $state('');
+	let fechaViaje = $state('');
 	let errors = $state<Record<string, string>>({});
 	let submitting = $state(false);
 	let formKey = $state(0);
@@ -67,6 +68,10 @@
 		}
 	});
 
+	function toDateInput(d: Date | string): string {
+		return new Date(d).toISOString().slice(0, 10);
+	}
+
 	function populateFromEdit(v: RideData) {
 		clienteIds = v.clientes.map((c) => c.id);
 		conductorNombre = v.conductorNombre;
@@ -78,6 +83,7 @@
 		precioUsd = v.precioUsd;
 		minutosEspera = v.minutosEspera?.toString() ?? '';
 		notas = v.notas ?? '';
+		fechaViaje = toDateInput(v.creadoEn);
 		errors = {};
 		formKey++;
 	}
@@ -103,6 +109,7 @@
 		precioUsd = '';
 		minutosEspera = '';
 		notas = '';
+		fechaViaje = '';
 		errors = {};
 		formKey++;
 	}
@@ -133,7 +140,8 @@
 			destino,
 			precioUsd,
 			minutosEspera: minutosEspera ? parseInt(minutosEspera) : undefined,
-			notas: notas.trim() || undefined
+			notas: notas.trim() || undefined,
+			creadoEn: fechaViaje || undefined
 		};
 	}
 
@@ -365,6 +373,19 @@
 						class="textarea textarea-bordered w-full resize-none"
 					></textarea>
 				</div>
+
+				<!-- Fecha (solo al editar) -->
+				{#if editViaje}
+					<div class="space-y-1">
+						<label for="fecha-viaje" class="text-sm font-medium text-base-content/70">Fecha</label>
+						<input
+							id="fecha-viaje"
+							type="date"
+							bind:value={fechaViaje}
+							class="input input-bordered w-full"
+						/>
+					</div>
+				{/if}
 			{/key}
 
 			{#if errors.submit}

@@ -55,7 +55,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	const body = await request.json().catch(() => null);
 	if (!body) error(400, 'Cuerpo de solicitud inválido');
 
-	const { clienteIds, conductorNombre, origen, paradas = [], destino, precioUsd, minutosEspera, notas } = body;
+	const { clienteIds, conductorNombre, origen, paradas = [], destino, precioUsd, minutosEspera, notas, creadoEn } = body;
 
 	if (!clienteIds?.length) error(400, 'Se requiere al menos un cliente');
 	if (!origen) error(400, 'Origen requerido');
@@ -75,7 +75,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 				conductorNombre: conductorNombre || 'MC',
 				precioUsd: precioUsd ? String(precioUsd) : null,
 				minutosEspera: minutosEspera ?? null,
-				notas: notas || null
+				notas: notas || null,
+				...(creadoEn ? { creadoEn: new Date(creadoEn + 'T12:00:00Z') } : {})
 			})
 			.where(eq(viajes.id, id))
 			.returning();
