@@ -109,7 +109,7 @@
 		precioUsd = '';
 		minutosEspera = '';
 		notas = '';
-		fechaViaje = '';
+		fechaViaje = new Date().toISOString().slice(0, 10);
 		errors = {};
 		formKey++;
 	}
@@ -389,18 +389,16 @@
 					></textarea>
 				</div>
 
-				<!-- Fecha (solo al editar) -->
-				{#if editViaje}
-					<div class="space-y-1">
-						<label for="fecha-viaje" class="text-sm font-medium text-base-content/70">Fecha</label>
-						<input
-							id="fecha-viaje"
-							type="date"
-							bind:value={fechaViaje}
-							class="input input-bordered w-full"
-						/>
-					</div>
-				{/if}
+				<!-- Fecha -->
+				<div class="space-y-1">
+					<label for="fecha-viaje" class="text-sm font-medium text-base-content/70">Fecha</label>
+					<input
+						id="fecha-viaje"
+						type="date"
+						bind:value={fechaViaje}
+						class="input input-bordered w-full"
+					/>
+				</div>
 			{/key}
 
 		</div>

@@ -40,7 +40,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		destino,
 		precioUsd,
 		minutosEspera,
-		notas
+		notas,
+		creadoEn
 	} = body;
 
 	if (!clienteIds?.length) error(400, 'Se requiere al menos un cliente');
@@ -61,7 +62,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				conductorNombre: conductorNombre || 'MC',
 				precioUsd: precioUsd ? String(precioUsd) : null,
 				minutosEspera: minutosEspera ?? null,
-				notas: notas || null
+				notas: notas || null,
+				...(creadoEn ? { creadoEn: new Date(creadoEn + 'T12:00:00Z') } : {})
 			})
 			.returning();
 
