@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { viajes, viajeClientes, viajeParadas, ubicaciones } from '$lib/server/schema';
-import { sql } from 'drizzle-orm';
+import { sql, isNull } from 'drizzle-orm';
 
 type FormLoc = { id: number | null; nombre: string };
 
@@ -18,6 +18,15 @@ async function resolveLocation(loc: FormLoc): Promise<number> {
 		.returning({ id: ubicaciones.id });
 	return row.id;
 }
+
+export const PATCH: RequestHandler = async () => {
+	const updated = await db
+		.update(viajes)
+		.set({ pagadoEn: new Date() })
+		.where(isNull(viajes.pagadoEn))
+		.returning({ id: viajes.id });
+	return json({ count: updated.length });
+};
 
 export const POST: RequestHandler = async ({ request }) => {
 	const body = await request.json().catch(() => null);

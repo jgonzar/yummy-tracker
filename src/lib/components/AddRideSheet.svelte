@@ -9,6 +9,7 @@
 	import { pendingStore, type PendingRide } from '$lib/stores/pending.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import LocationSelect, { type FormLocation } from './LocationSelect.svelte';
+	import LocationChips from './LocationChips.svelte';
 	import type { RideData } from './RideCard.svelte';
 
 	type StopItem = { key: number; location: FormLocation | null };
@@ -262,6 +263,7 @@
 					<div class="space-y-1">
 						<span class="text-xs text-base-content/50">Origen</span>
 						<LocationSelect bind:value={origen} {locations} placeholder="¿Desde dónde?" />
+						<LocationChips value={origen} onSelect={(loc) => (origen = loc)} />
 						{#if errors.origen}
 							<p class="text-error text-xs">{errors.origen}</p>
 						{/if}
@@ -276,6 +278,7 @@
 									{locations}
 									placeholder="¿Dónde para?"
 								/>
+								<LocationChips value={parada.location} onSelect={(loc) => (parada.location = loc)} />
 							</div>
 							<button
 								type="button"
@@ -303,6 +306,7 @@
 					<div class="space-y-1">
 						<span class="text-xs text-base-content/50">Destino</span>
 						<LocationSelect bind:value={destino} {locations} placeholder="¿A dónde?" />
+						<LocationChips value={destino} onSelect={(loc) => (destino = loc)} />
 						{#if errors.destino}
 							<p class="text-error text-xs">{errors.destino}</p>
 						{/if}

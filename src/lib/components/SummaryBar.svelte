@@ -3,12 +3,14 @@
 		count,
 		totalUsd,
 		tasa = null,
-		stale = false
+		stale = false,
+		onPayAll
 	}: {
 		count: number;
 		totalUsd: number;
 		tasa?: number | null;
 		stale?: boolean;
+		onPayAll?: () => Promise<void>;
 	} = $props();
 
 	const totalUsdFmt = $derived(
@@ -24,6 +26,27 @@
 					}).format(totalUsd * tasa)
 			: null
 	);
+
+	let confirming = $state(false);
+	let paying = $state(false);
+	let confirmTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function startConfirm() {
+		confirming = true;
+		confirmTimer = setTimeout(() => { confirming = false; }, 4000);
+	}
+
+	function cancelConfirm() {
+		if (confirmTimer) { clearTimeout(confirmTimer); confirmTimer = null; }
+		confirming = false;
+	}
+
+	async function confirm() {
+		cancelConfirm();
+		paying = true;
+		await onPayAll?.();
+		paying = false;
+	}
 </script>
 
 <div class="card bg-base-200 shadow-sm sticky top-16 z-20 mb-4">
@@ -45,5 +68,32 @@
 				{/if}
 			</div>
 		</div>
+
+		{#if onPayAll && count > 0}
+			<div class="border-t border-base-300 mt-2 pt-2 flex items-center justify-end">
+				{#if confirming}
+					<div class="flex items-center gap-2">
+						<span class="text-xs text-base-content/50">¿Marcar todas como pagadas?</span>
+						<button class="btn btn-ghost btn-xs" onclick={cancelConfirm} disabled={paying}>
+							No
+						</button>
+						<button class="btn btn-success btn-xs" onclick={confirm} disabled={paying}>
+							{#if paying}
+								<span class="loading loading-spinner loading-xs"></span>
+							{:else}
+								Sí, pagar todo
+							{/if}
+						</button>
+					</div>
+				{:else}
+					<button
+						class="btn btn-ghost btn-xs text-base-content/40"
+						onclick={startConfirm}
+					>
+						Marcar todo pagado
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </div>

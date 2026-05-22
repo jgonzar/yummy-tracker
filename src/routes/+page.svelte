@@ -4,9 +4,11 @@
 	import { fly } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { pendingStore } from '$lib/stores/pending.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import AddRideSheet from '$lib/components/AddRideSheet.svelte';
 	import RideCard, { type RideData } from '$lib/components/RideCard.svelte';
 	import SummaryBar from '$lib/components/SummaryBar.svelte';
+	import QuickRides from '$lib/components/QuickRides.svelte';
 
 	let { data } = $props();
 	let showSheet = $state(false);
@@ -84,13 +86,27 @@
 	async function handlePriceUpdated() {
 		await invalidateAll();
 	}
+
+	async function handlePayAll() {
+		const res = await fetch('/api/viajes', { method: 'PATCH' });
+		if (!res.ok) {
+			toastStore.add('Error al marcar todas como pagadas', 'error');
+			return;
+		}
+		toastStore.add('Todas las carreras marcadas como pagadas', 'success');
+		hiddenIds = new Set();
+		await invalidateAll();
+	}
 </script>
+
+<QuickRides onCreated={onSaved} />
 
 <SummaryBar
 	count={visibleViajes.length}
 	{totalUsd}
 	tasa={data.tasa?.tasa ?? null}
 	stale={data.tasa?.stale ?? false}
+	onPayAll={handlePayAll}
 />
 
 {#if visibleViajes.length === 0}
