@@ -119,6 +119,21 @@
 		resetForm();
 	}
 
+	const FIELD_LABELS: Record<string, string> = {
+		clientes: 'Para quién',
+		origen: 'Origen',
+		destino: 'Destino',
+		paradas: 'Paradas',
+		precio: 'Precio'
+	};
+
+	const validationSummary = $derived(
+		Object.keys(errors)
+			.filter((k) => k !== 'submit')
+			.map((k) => FIELD_LABELS[k] ?? k)
+			.join(', ')
+	);
+
 	function validate(): boolean {
 		const e: Record<string, string> = {};
 		if (clienteIds.length === 0) e.clientes = 'Selecciona al menos un cliente';
@@ -388,15 +403,16 @@
 				{/if}
 			{/key}
 
-			{#if errors.submit}
-				<div class="alert alert-error text-sm py-2">
-					<span>{errors.submit}</span>
-				</div>
-			{/if}
 		</div>
 
 		<!-- Footer actions -->
-		<div class="px-4 py-3 border-t border-base-300 shrink-0 flex gap-2">
+		<div class="px-4 py-3 border-t border-base-300 shrink-0 space-y-2">
+		{#if validationSummary}
+			<p class="text-error text-sm">Faltan: {validationSummary}</p>
+		{:else if errors.submit}
+			<p class="text-error text-sm">{errors.submit}</p>
+		{/if}
+		<div class="flex gap-2">
 			<button type="button" onclick={close} class="btn btn-ghost flex-1" disabled={submitting}>
 				Cancelar
 			</button>
@@ -412,6 +428,7 @@
 					{editViaje ? 'Guardar Cambios' : 'Guardar Carrera'}
 				{/if}
 			</button>
+		</div>
 		</div>
 	</div>
 
