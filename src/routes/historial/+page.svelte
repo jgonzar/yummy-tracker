@@ -1,17 +1,63 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import RideCard from '$lib/components/RideCard.svelte';
+	import type { RideData } from '$lib/components/RideCard.svelte';
 
 	let { data } = $props();
+
+	let tab = $state<'pagadas' | 'papelera'>('pagadas');
+	let hiddenIds = $state(new Set<number>());
+
+	const visibleBorrados = $derived(data.borrados.filter((v: RideData) => !hiddenIds.has(v.id)));
+
+	async function handleRestore(id: number) {
+		hiddenIds = new Set([...hiddenIds, id]);
+		await invalidateAll();
+	}
 </script>
 
-{#if data.viajes.length === 0}
-	<div class="flex flex-col items-center justify-center py-24 gap-2">
-		<p class="text-base-content/30 text-sm">No hay carreras pagadas</p>
-	</div>
+<div class="tabs tabs-border mb-4 px-4 pt-2">
+	<button
+		class="tab"
+		class:tab-active={tab === 'pagadas'}
+		onclick={() => (tab = 'pagadas')}
+	>
+		Pagadas
+	</button>
+	<button
+		class="tab"
+		class:tab-active={tab === 'papelera'}
+		onclick={() => (tab = 'papelera')}
+	>
+		Papelera
+		{#if data.borrados.length > 0}
+			<span class="badge badge-sm badge-warning ml-1">{data.borrados.length}</span>
+		{/if}
+	</button>
+</div>
+
+{#if tab === 'pagadas'}
+	{#if data.viajes.length === 0}
+		<div class="flex flex-col items-center justify-center py-24 gap-2">
+			<p class="text-base-content/30 text-sm">No hay carreras pagadas</p>
+		</div>
+	{:else}
+		<div class="space-y-3 pb-8">
+			{#each data.viajes as viaje (viaje.id)}
+				<RideCard {viaje} tasa={data.tasa?.tasa ?? null} />
+			{/each}
+		</div>
+	{/if}
 {:else}
-	<div class="space-y-3 pb-8">
-		{#each data.viajes as viaje (viaje.id)}
-			<RideCard {viaje} tasa={data.tasa?.tasa ?? null} />
-		{/each}
-	</div>
+	{#if visibleBorrados.length === 0}
+		<div class="flex flex-col items-center justify-center py-24 gap-2">
+			<p class="text-base-content/30 text-sm">No hay carreras eliminadas</p>
+		</div>
+	{:else}
+		<div class="space-y-3 pb-8">
+			{#each visibleBorrados as viaje (viaje.id)}
+				<RideCard {viaje} tasa={data.tasa?.tasa ?? null} onRestore={handleRestore} />
+			{/each}
+		</div>
+	{/if}
 {/if}

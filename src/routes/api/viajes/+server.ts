@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { viajes, viajeClientes, viajeParadas, ubicaciones } from '$lib/server/schema';
-import { sql, isNull } from 'drizzle-orm';
+import { sql, isNull, and } from 'drizzle-orm';
 
 type FormLoc = { id: number | null; nombre: string };
 
@@ -23,7 +23,7 @@ export const PATCH: RequestHandler = async () => {
 	const updated = await db
 		.update(viajes)
 		.set({ pagadoEn: new Date() })
-		.where(isNull(viajes.pagadoEn))
+		.where(and(isNull(viajes.pagadoEn), isNull(viajes.borradoEn)))
 		.returning({ id: viajes.id });
 	return json({ count: updated.length });
 };

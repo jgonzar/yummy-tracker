@@ -7,6 +7,7 @@
 		id: number;
 		creadoEn: Date | string;
 		pagadoEn?: Date | string | null;
+		borradoEn?: Date | string | null;
 		conductorNombre: string;
 		precioUsd: string | null;
 		minutosEspera: number | null;
@@ -22,7 +23,8 @@
 		onPaid,
 		onDeleted,
 		onEdit,
-		onPriceUpdated
+		onPriceUpdated,
+		onRestore
 	}: {
 		viaje: RideData;
 		tasa?: number | null;
@@ -31,11 +33,13 @@
 		onDeleted?: (id: number) => void;
 		onEdit?: (viaje: RideData) => void;
 		onPriceUpdated?: (id: number) => void;
+		onRestore?: (id: number) => void;
 	} = $props();
 
 	// ── price state ───────────────────────────────────────────────────────────
 	let paying = $state(false);
 	let deleting = $state(false);
+	let restoring = $state(false);
 	let confirmingDelete = $state(false);
 	let editingPrice = $state(false);
 	let priceInput = $state('');
@@ -143,6 +147,14 @@
 			: null
 	);
 
+	const fechaBorrado = $derived(
+		viaje.borradoEn
+			? new Intl.DateTimeFormat('es-VE', { day: 'numeric', month: 'short', year: 'numeric' }).format(
+					new Date(viaje.borradoEn)
+				)
+			: null
+	);
+
 	// ── actions ───────────────────────────────────────────────────────────────
 	function startEditPrice() {
 		if (!canEditPrice) return;
@@ -206,6 +218,23 @@
 		confirmingDelete = false;
 		deleteRide();
 	}
+
+	async function restoreRide() {
+		restoring = true;
+		try {
+			const res = await fetch(`/api/viajes/${viaje.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ restore: true })
+			});
+			if (!res.ok) throw new Error();
+			toastStore.add('Carrera restaurada', 'success');
+			onRestore?.(viaje.id);
+		} catch {
+			toastStore.add('Error al restaurar la carrera', 'error');
+			restoring = false;
+		}
+	}
 </script>
 
 <!-- Swipe wrapper -->
@@ -254,11 +283,10 @@
 								<span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-base-content/50">$</span>
 								<input
 									use:focusAndSelect
-									type="number"
+									type="text"
 									bind:value={priceInput}
-									min="0"
-									step="0.01"
 									inputmode="decimal"
+									pattern="^\d*\.?\d*$"
 									class="input input-bordered input-sm w-24 pl-5"
 									onkeydown={(e) => {
 										if (e.key === 'Enter') savePrice();
@@ -369,6 +397,17 @@
 							<span class="loading loading-spinner loading-xs"></span>
 						{:else}
 							Sí, eliminar
+						{/if}
+					</button>
+				</div>
+			{:else if onRestore}
+				<div class="flex items-center justify-between pt-2 border-t border-base-300">
+					<span class="text-xs text-base-content/30">Borrado {fechaBorrado}</span>
+					<button class="btn btn-warning btn-xs" onclick={restoreRide} disabled={restoring}>
+						{#if restoring}
+							<span class="loading loading-spinner loading-xs"></span>
+						{:else}
+							Restaurar
 						{/if}
 					</button>
 				</div>

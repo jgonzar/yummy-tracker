@@ -27,7 +27,7 @@
 
 	<!-- Desktop: brand + links on left -->
 	<div class="navbar-start hidden md:flex items-center gap-1">
-		<span class="font-bold text-base tracking-wide px-2 mr-1">Yuumy Track</span>
+		<span class="font-bold text-base tracking-wide px-2 mr-1">Yummy Track</span>
 		<a
 			href="/"
 			class="btn btn-ghost btn-sm"
@@ -46,7 +46,7 @@
 
 	<!-- Mobile: brand in center -->
 	<div class="navbar-center md:hidden">
-		<span class="font-bold text-base tracking-wide">Yuumy Track</span>
+		<span class="font-bold text-base tracking-wide">Yummy Track</span>
 	</div>
 
 	<!-- User avatar — always on right -->

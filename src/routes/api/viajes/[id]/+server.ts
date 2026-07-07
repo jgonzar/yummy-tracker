@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { viajes, viajeClientes, viajeParadas, ubicaciones } from '$lib/server/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, isNull, sql } from 'drizzle-orm';
 
 type FormLoc = { id: number | null; nombre: string };
 
@@ -24,6 +24,17 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 	if (isNaN(id)) error(400, 'ID inválido');
 
 	const body = await request.json().catch(() => null);
+
+	// Restore deleted ride
+	if (body?.restore === true) {
+		const [updated] = await db
+			.update(viajes)
+			.set({ borradoEn: null })
+			.where(eq(viajes.id, id))
+			.returning();
+		if (!updated) error(404, 'Carrera no encontrada');
+		return json(updated);
+	}
 
 	// Price update
 	if (body?.precioUsd !== undefined) {
@@ -106,7 +117,12 @@ export const DELETE: RequestHandler = async ({ params }) => {
 	const id = parseInt(params.id);
 	if (isNaN(id)) error(400, 'ID inválido');
 
-	await db.delete(viajes).where(eq(viajes.id, id));
+	const [updated] = await db
+		.update(viajes)
+		.set({ borradoEn: new Date() })
+		.where(eq(viajes.id, id))
+		.returning();
+	if (!updated) error(404, 'Carrera no encontrada');
 
 	return new Response(null, { status: 204 });
 };

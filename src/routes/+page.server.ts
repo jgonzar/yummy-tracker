@@ -1,12 +1,12 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { viajes, viajeClientes, viajeParadas, ubicaciones, usuarios } from '$lib/server/schema';
-import { isNull, desc, asc, inArray, eq } from 'drizzle-orm';
+import { isNull, desc, asc, inArray, eq, and } from 'drizzle-orm';
 import { getTasaBcv } from '$lib/server/bcv';
 
 export const load: PageServerLoad = async () => {
 	const [pendientes, tasaResult] = await Promise.all([
-		db.select().from(viajes).where(isNull(viajes.pagadoEn)).orderBy(desc(viajes.creadoEn)),
+		db.select().from(viajes).where(and(isNull(viajes.pagadoEn), isNull(viajes.borradoEn))).orderBy(desc(viajes.creadoEn)),
 		getTasaBcv()
 	]);
 

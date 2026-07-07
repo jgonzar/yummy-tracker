@@ -342,11 +342,10 @@
 					<div class="relative">
 						<span class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 text-sm">$</span>
 						<input
-							type="number"
+							type="text"
 							bind:value={precioUsd}
-							min="0"
-							step="0.01"
 							inputmode="decimal"
+							pattern="^\d*\.?\d*$"
 							placeholder="0.00"
 							class="input input-bordered w-full pl-7"
 						/>

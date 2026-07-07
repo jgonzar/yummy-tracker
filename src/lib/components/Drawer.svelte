@@ -5,7 +5,7 @@
 </script>
 
 <ul class="menu bg-base-200 min-h-full w-64 p-4 gap-1">
-	<li class="menu-title text-xs mb-1">Yuumy Track</li>
+	<li class="menu-title text-xs mb-1">Yummy Track</li>
 	<li>
 		<a
 			href="/"
