@@ -267,54 +267,55 @@
 		ontouchend={canSwipe ? onTouchEnd : undefined}
 	>
 		<div class="card-body p-4 gap-3">
-			<!-- Header: clients + price + menu -->
-			<div class="flex items-start justify-between gap-2">
-				<div class="flex flex-wrap gap-1">
-					{#each viaje.clientes as cliente}
-						<span class="badge badge-primary badge-sm">{cliente.nombre}</span>
-					{/each}
-				</div>
 
-				<!-- Price area -->
-				<div class="flex items-start gap-10 shrink-0">
-					{#if editingPrice}
-						<div class="flex items-center gap-2.5">
-							<div class="relative">
-								<span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-base-content/50">$</span>
-								<input
-									use:focusAndSelect
-									type="text"
-									bind:value={priceInput}
-									inputmode="decimal"
-									pattern="^\d*\.?\d*$"
-									class="input input-bordered input-sm w-24 pl-5"
-									onkeydown={(e) => {
-										if (e.key === 'Enter') savePrice();
-										if (e.key === 'Escape') editingPrice = false;
-									}}
-								/>
-							</div>
-							<button
-								class="btn btn-success btn-sm btn-circle"
-								onclick={savePrice}
-								disabled={savingPrice}
-								aria-label="Guardar precio"
-							>
-								{#if savingPrice}
-									<span class="loading loading-spinner loading-xs"></span>
-								{:else}
-									✓
-								{/if}
-							</button>
-							<button
-								class="btn btn-ghost btn-sm btn-circle"
-								onclick={() => (editingPrice = false)}
-								aria-label="Cancelar"
-							>
-								✕
-							</button>
-						</div>
-					{:else}
+			<!-- Price edit: full-width overlay at top of card when active -->
+			{#if editingPrice}
+				<div class="flex items-center gap-2">
+					<div class="relative flex-1">
+						<span class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 font-medium">$</span>
+						<input
+							use:focusAndSelect
+							type="text"
+							bind:value={priceInput}
+							inputmode="decimal"
+							pattern="^\d*\.?\d*$"
+							class="input input-bordered w-full pl-9 text-xl font-bold"
+							onkeydown={(e) => {
+								if (e.key === 'Enter') savePrice();
+								if (e.key === 'Escape') editingPrice = false;
+							}}
+						/>
+					</div>
+					<button
+						class="btn btn-success btn-square"
+						onclick={savePrice}
+						disabled={savingPrice}
+						aria-label="Guardar precio"
+					>
+						{#if savingPrice}
+							<span class="loading loading-spinner loading-sm"></span>
+						{:else}
+							✓
+						{/if}
+					</button>
+					<button
+						class="btn btn-ghost btn-square"
+						onclick={() => (editingPrice = false)}
+						aria-label="Cancelar"
+					>
+						✕
+					</button>
+				</div>
+			{:else}
+				<!-- Header: clients + price display + menu -->
+				<div class="flex items-start justify-between gap-2">
+					<div class="flex flex-wrap gap-1">
+						{#each viaje.clientes as cliente}
+							<span class="badge badge-primary badge-sm">{cliente.nombre}</span>
+						{/each}
+					</div>
+
+					<div class="flex items-start gap-10 shrink-0">
 						<div class="flex flex-col">
 							{#if precio}
 								<button
@@ -338,31 +339,31 @@
 
 						{#if !fechaPago && !pending}
 							<div class="dropdown dropdown-end">
-									<button
-										tabindex="0"
-										class="btn btn-ghost btn-xs btn-circle text-base-content/40"
-										aria-label="Opciones"
-									>
-										•••
-									</button>
-									<ul
-										tabindex="0"
-										class="dropdown-content z-50 menu p-1 shadow-lg bg-base-300 rounded-box w-36 mt-1"
-									>
-										<li>
-											<button onclick={() => onEdit?.(viaje)}>Editar</button>
-										</li>
-										<li>
-											<button class="text-error" onclick={() => (confirmingDelete = true)}>
-												Eliminar
-											</button>
-										</li>
-									</ul>
-								</div>
+								<button
+									tabindex="0"
+									class="btn btn-ghost btn-xs btn-circle text-base-content/40"
+									aria-label="Opciones"
+								>
+									•••
+								</button>
+								<ul
+									tabindex="0"
+									class="dropdown-content z-50 menu p-1 shadow-lg bg-base-300 rounded-box w-36 mt-1"
+								>
+									<li>
+										<button onclick={() => onEdit?.(viaje)}>Editar</button>
+									</li>
+									<li>
+										<button class="text-error" onclick={() => (confirmingDelete = true)}>
+											Eliminar
+										</button>
+									</li>
+								</ul>
+							</div>
 						{/if}
-					{/if}
+					</div>
 				</div>
-			</div>
+			{/if}
 
 			<!-- Route -->
 			<div class="text-sm">
