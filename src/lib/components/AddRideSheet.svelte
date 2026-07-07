@@ -72,6 +72,10 @@
 		return new Date(d).toISOString().slice(0, 10);
 	}
 
+	function normalizePrecio(s: string): string {
+		return s.replace(',', '.').trim();
+	}
+
 	function populateFromEdit(v: RideData) {
 		clienteIds = v.clientes.map((c) => c.id);
 		conductorNombre = v.conductorNombre;
@@ -80,7 +84,7 @@
 			.slice(1, -1)
 			.map((p) => ({ key: stopCounter++, location: p as FormLocation }));
 		destino = v.paradas[v.paradas.length - 1] ?? null;
-		precioUsd = v.precioUsd;
+		precioUsd = v.precioUsd ?? '';
 		minutosEspera = v.minutosEspera?.toString() ?? '';
 		notas = v.notas ?? '';
 		fechaViaje = toDateInput(v.creadoEn);
@@ -139,7 +143,8 @@
 		if (clienteIds.length === 0) e.clientes = 'Selecciona al menos un cliente';
 		if (!origen) e.origen = 'Requerido';
 		if (!destino) e.destino = 'Requerido';
-		if (precioUsd && (isNaN(parseFloat(precioUsd)) || parseFloat(precioUsd) < 0))
+		const normalizedPrecio = normalizePrecio(precioUsd);
+		if (normalizedPrecio && (isNaN(parseFloat(normalizedPrecio)) || parseFloat(normalizedPrecio) < 0))
 			e.precio = 'Ingresa un precio válido';
 		if (paradas.some((p) => !p.location)) e.paradas = 'Completa todas las paradas';
 		errors = e;
@@ -147,13 +152,14 @@
 	}
 
 	function buildPayload() {
+		const normalizedPrecio = normalizePrecio(precioUsd);
 		return {
 			clienteIds,
 			conductorNombre,
 			origen,
 			paradas: paradas.map((p) => p.location),
 			destino,
-			precioUsd,
+			precioUsd: normalizedPrecio || null,
 			minutosEspera: minutosEspera ? parseInt(minutosEspera) : undefined,
 			notas: notas.trim() || undefined,
 			creadoEn: fechaViaje || undefined

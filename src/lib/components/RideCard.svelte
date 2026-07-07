@@ -168,7 +168,7 @@
 	}
 
 	async function savePrice() {
-		const val = parseFloat(priceInput);
+		const val = parseFloat(priceInput.replace(',', '.').trim());
 		if (isNaN(val) || val < 0) return;
 		savingPrice = true;
 		try {
