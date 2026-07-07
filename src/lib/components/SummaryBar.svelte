@@ -4,13 +4,15 @@
 		totalUsd,
 		tasa = null,
 		stale = false,
-		onPayAll
+		onPayAll,
+		onExport
 	}: {
 		count: number;
 		totalUsd: number;
 		tasa?: number | null;
 		stale?: boolean;
 		onPayAll?: () => Promise<void>;
+		onExport?: () => void;
 	} = $props();
 
 	const totalUsdFmt = $derived(
@@ -69,29 +71,46 @@
 			</div>
 		</div>
 
-		{#if onPayAll && count > 0}
-			<div class="border-t border-base-300 mt-2 pt-2 flex items-center justify-end">
-				{#if confirming}
-					<div class="flex items-center gap-2">
-						<span class="text-xs text-base-content/50">¿Marcar todas como pagadas?</span>
-						<button class="btn btn-ghost btn-xs" onclick={cancelConfirm} disabled={paying}>
-							No
-						</button>
-						<button class="btn btn-success btn-xs" onclick={confirm} disabled={paying}>
-							{#if paying}
-								<span class="loading loading-spinner loading-xs"></span>
-							{:else}
-								Sí, pagar todo
-							{/if}
-						</button>
-					</div>
-				{:else}
+		{#if count > 0 && (onPayAll || onExport)}
+			<div class="border-t border-base-300 mt-2 pt-2 flex items-center justify-between">
+				{#if onExport}
 					<button
-						class="btn btn-ghost btn-xs text-base-content/40"
-						onclick={startConfirm}
+						class="btn btn-ghost btn-xs text-base-content/40 gap-1"
+						onclick={onExport}
+						aria-label="Exportar resumen"
 					>
-						Marcar todo pagado
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+						</svg>
+						Compartir
 					</button>
+				{:else}
+					<span></span>
+				{/if}
+
+				{#if onPayAll}
+					{#if confirming}
+						<div class="flex items-center gap-2">
+							<span class="text-xs text-base-content/50">¿Marcar todas como pagadas?</span>
+							<button class="btn btn-ghost btn-xs" onclick={cancelConfirm} disabled={paying}>
+								No
+							</button>
+							<button class="btn btn-success btn-xs" onclick={confirm} disabled={paying}>
+								{#if paying}
+									<span class="loading loading-spinner loading-xs"></span>
+								{:else}
+									Sí, pagar todo
+								{/if}
+							</button>
+						</div>
+					{:else}
+						<button
+							class="btn btn-ghost btn-xs text-base-content/40"
+							onclick={startConfirm}
+						>
+							Marcar todo pagado
+						</button>
+					{/if}
 				{/if}
 			</div>
 		{/if}

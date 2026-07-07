@@ -97,6 +97,68 @@
 		hiddenIds = new Set();
 		await invalidateAll();
 	}
+
+	function buildReceipt(viajes: RideData[]): string {
+		const tasa = data.tasa?.tasa ?? null;
+		const today = new Intl.DateTimeFormat('es-VE', {
+			day: 'numeric', month: 'long', year: 'numeric'
+		}).format(new Date());
+		const div = '─'.repeat(36);
+		const fmtFecha = (d: Date | string) =>
+			new Intl.DateTimeFormat('es-VE', { day: 'numeric', month: 'short' }).format(new Date(d));
+		const fmtUsd = (n: number) =>
+			new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+		const fmtVes = (n: number) =>
+			'Bs. ' + new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+		const lines: string[] = [
+			'YUMMY TRACK',
+			`Carreras pendientes — ${today}`,
+			div,
+			''
+		];
+
+		for (let i = 0; i < viajes.length; i++) {
+			const v = viajes[i];
+			if (v.id < 0) continue; // skip offline-queued
+			const ruta = v.paradas.map(p => p.nombre).join(' → ');
+			const pasajeros = v.clientes.map(c => c.nombre).join(', ');
+			const usd = v.precioUsd ? parseFloat(v.precioUsd) : null;
+			const precioLine = usd != null
+				? tasa ? `${fmtUsd(usd)}  (${fmtVes(usd * tasa)})` : fmtUsd(usd)
+				: 'Sin precio';
+
+			lines.push(`${i + 1}. ${fmtFecha(v.creadoEn)}  •  ${ruta}`);
+			lines.push(`   ${pasajeros}`);
+			lines.push(`   ${precioLine}`);
+			lines.push('');
+		}
+
+		const total = viajes.filter(v => v.id >= 0).reduce((s, v) => s + (v.precioUsd ? parseFloat(v.precioUsd) : 0), 0);
+		const count = viajes.filter(v => v.id >= 0).length;
+		const totalLine = tasa
+			? `${fmtUsd(total)}  (${fmtVes(total * tasa)})`
+			: fmtUsd(total);
+
+		lines.push(div);
+		lines.push(`${count} carrera${count !== 1 ? 's' : ''}  •  Total: ${totalLine}`);
+
+		return lines.join('\n');
+	}
+
+	async function handleExport() {
+		const text = buildReceipt(visibleViajes);
+		if (typeof navigator !== 'undefined' && navigator.share) {
+			try {
+				await navigator.share({ text });
+				return;
+			} catch {
+				// user cancelled — fall through to clipboard
+			}
+		}
+		await navigator.clipboard.writeText(text);
+		toastStore.add('Resumen copiado al portapapeles', 'success');
+	}
 </script>
 
 <QuickRides onCreated={onSaved} />
@@ -107,6 +169,7 @@
 	tasa={data.tasa?.tasa ?? null}
 	stale={data.tasa?.stale ?? false}
 	onPayAll={handlePayAll}
+	onExport={handleExport}
 />
 
 {#if visibleViajes.length === 0}
